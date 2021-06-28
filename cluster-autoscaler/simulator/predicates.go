@@ -335,6 +335,13 @@ func (p *PredicateChecker) CheckPredicates(pod *apiv1.Pod, predicateMetadata pre
 			continue
 		}
 
+		// Rok-CSI
+		csiGuardSelector, err := labels.Parse("app=rok-csi-guard")
+		if csiGuardSelector.Matches(labels.Set(pod.Labels)) {
+			klog.V(2).Infof("Skipping Predicate Check for Rok CSI Guard pod: %+v", pod.Name)
+			continue
+		}
+
 		match, failureReasons, err := predInfo.Predicate(pod, predicateMetadata, nodeInfo)
 
 		if err != nil || !match {
