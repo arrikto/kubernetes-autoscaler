@@ -697,6 +697,12 @@ func (b *volumeBinder) checkBoundClaims(claims []*v1.PersistentVolumeClaim, node
 			return false, err
 		}
 
+		storageClassName := pv.Spec.StorageClassName
+		if storageClassName == "rok" {
+			klog.V(2).Infof("PersistentVolume %q bound with Pod %s is of Rok Storage Class, skipping CheckNodeAffinity()", pvName, podName)
+			return true, nil
+		}
+
 		err = volumeutil.CheckNodeAffinity(pv, node.Labels)
 		if err != nil {
 			klog.V(4).Infof("PersistentVolume %q, Node %q mismatch for Pod %q: %v", pvName, node.Name, podName, err)
