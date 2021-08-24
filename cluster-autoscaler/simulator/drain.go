@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/autoscaler/cluster-autoscaler/utils/drain"
 	kube_util "k8s.io/autoscaler/cluster-autoscaler/utils/kubernetes"
+	"k8s.io/klog"
 	schedulernodeinfo "k8s.io/kubernetes/pkg/scheduler/nodeinfo"
 )
 
@@ -85,10 +86,21 @@ func DetailedGetPodsForMove(nodeInfo *schedulernodeinfo.NodeInfo, skipNodesWithS
 func checkPdbs(pods []*apiv1.Pod, pdbs []*policyv1.PodDisruptionBudget) (*drain.BlockingPod, error) {
 	// TODO: make it more efficient.
 	for _, pdb := range pdbs {
+		// Ignore PDBs for rok-csi-guard pods
+		csiGuardSelector, err := labels.Parse("app=rok-csi-guard")
+		if err != nil {
+			return nil, err
+		}
+		if csiGuardSelector.Matches(labels.Set(pdb.Labels)) {
+			klog.V(2).Infof("Ignoring pod disruption budget  %s/%s", pdb.Namespace, pdb.Name)
+			continue
+		}
+
 		selector, err := metav1.LabelSelectorAsSelector(pdb.Spec.Selector)
 		if err != nil {
 			return nil, err
 		}
+
 		for _, pod := range pods {
 			if pod.Namespace == pdb.Namespace && selector.Matches(labels.Set(pod.Labels)) {
 				if pdb.Status.DisruptionsAllowed < 1 {
