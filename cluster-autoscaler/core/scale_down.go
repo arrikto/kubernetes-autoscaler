@@ -64,8 +64,6 @@ const (
 	MaxKubernetesEmptyNodeDeletionTime = 3 * time.Minute
 	// MaxCloudProviderNodeDeletionTime is the maximum time needed by cloud provider to delete a node.
 	MaxCloudProviderNodeDeletionTime = 5 * time.Minute
-	// MaxPodEvictionTime is the maximum time CA tries to evict a pod before giving up.
-	MaxPodEvictionTime = 2 * time.Minute
 	// EvictionRetryTime is the time after CA retries failed pod eviction.
 	EvictionRetryTime = 10 * time.Second
 	// PodEvictionHeadroom is the extra time we wait to catch situations when the pod is ignoring SIGTERM and
@@ -1024,7 +1022,7 @@ func (sd *ScaleDown) deleteNode(node *apiv1.Node, pods []*apiv1.Pod,
 	sd.context.Recorder.Eventf(node, apiv1.EventTypeNormal, "ScaleDown", "marked the node as toBeDeleted/unschedulable")
 
 	// attempt drain
-	evictionResults, err := drainNode(node, pods, sd.context.ClientSet, sd.context.Recorder, sd.context.MaxGracefulTerminationSec, MaxPodEvictionTime, EvictionRetryTime, PodEvictionHeadroom)
+	evictionResults, err := drainNode(node, pods, sd.context.ClientSet, sd.context.Recorder, sd.context.AutoscalingOptions.MaxGracefulTerminationSec, sd.context.AutoscalingOptions.MaxPodEvictionTime, EvictionRetryTime, PodEvictionHeadroom)
 	if err != nil {
 		return status.NodeDeleteResult{ResultType: status.NodeDeleteErrorFailedToEvictPods, Err: err, PodEvictionResults: evictionResults}
 	}
