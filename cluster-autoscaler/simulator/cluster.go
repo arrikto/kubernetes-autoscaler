@@ -33,6 +33,7 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/kubernetes/pkg/scheduler/algorithm/predicates"
 	schedulernodeinfo "k8s.io/kubernetes/pkg/scheduler/nodeinfo"
 
@@ -275,6 +276,13 @@ func findPlaceFor(removedNode string, pods []*apiv1.Pod, nodes []*apiv1.Node, no
 		targetNode := ""
 		predicateMeta := predicateChecker.GetPredicateMetadata(pod, newNodeInfos)
 		loggingQuota.Reset()
+
+		// Skip rok-csi-guard
+		csiGuardSelector, _ := labels.Parse("app=rok-csi-guard")
+		if csiGuardSelector.Matches(labels.Set(pod.Labels)) {
+			klog.V(2).Infof("Skipping findPlceFor for %s pod", pod.Name)
+			continue
+		}
 
 		klog.V(5).Infof("Looking for place for %s/%s", pod.Namespace, pod.Name)
 
