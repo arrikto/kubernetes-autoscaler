@@ -32,6 +32,7 @@ import (
 	apiv1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/labels"
 	schedulerframework "k8s.io/kubernetes/pkg/scheduler/framework/v1alpha1"
 
 	klog "k8s.io/klog/v2"
@@ -337,6 +338,13 @@ func findPlaceFor(removedNode string, pods []*apiv1.Pod, nodes map[string]bool,
 		loggingQuota.Reset()
 
 		klog.V(5).Infof("Looking for place for %s/%s", pod.Namespace, pod.Name)
+
+		// Skip rok-csi-guard
+		csiGuardSelector, _ := labels.Parse("app=rok-csi-guard")
+		if csiGuardSelector.Matches(labels.Set(pod.Labels)) {
+			klog.V(2).Infof("Skipping findPlaceFor for %s pod", pod.Name)
+			continue
+		}
 
 		if hintedNode, hasHint := oldHints[podKey(pod)]; hasHint {
 			if hintedNode != removedNode && tryNodeForPod(hintedNode, pod) {
