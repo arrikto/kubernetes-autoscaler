@@ -46,12 +46,15 @@ type CycleState struct {
 	storage map[StateKey]StateData
 	// if recordPluginMetrics is true, PluginExecutionDuration will be recorded for this cycle.
 	recordPluginMetrics bool
+	// if true, consider the Rok volume unpinned
+	SimulateUnpinnedVolumes bool
 }
 
 // NewCycleState initializes a new CycleState and returns its pointer.
 func NewCycleState() *CycleState {
 	return &CycleState{
-		storage: make(map[StateKey]StateData),
+		storage:                 make(map[StateKey]StateData),
+		SimulateUnpinnedVolumes: false,
 	}
 }
 
