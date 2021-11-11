@@ -25,5 +25,5 @@ import (
 type PredicateChecker interface {
 	FitsAnyNode(clusterSnapshot ClusterSnapshot, pod *apiv1.Pod) (string, error)
 	FitsAnyNodeMatching(clusterSnapshot ClusterSnapshot, pod *apiv1.Pod, nodeMatches func(*schedulernodeinfo.NodeInfo) bool) (string, error)
-	CheckPredicates(clusterSnapshot ClusterSnapshot, pod *apiv1.Pod, nodeName string) *PredicateError
+	CheckPredicates(clusterSnapshot ClusterSnapshot, pod *apiv1.Pod, nodeName string, simulateUnpinnedVolumes bool) *PredicateError
 }

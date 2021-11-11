@@ -145,7 +145,7 @@ func (p *SchedulerBasedPredicateChecker) FitsAnyNodeMatching(clusterSnapshot Clu
 }
 
 // CheckPredicates checks if the given pod can be placed on the given node.
-func (p *SchedulerBasedPredicateChecker) CheckPredicates(clusterSnapshot ClusterSnapshot, pod *apiv1.Pod, nodeName string) *PredicateError {
+func (p *SchedulerBasedPredicateChecker) CheckPredicates(clusterSnapshot ClusterSnapshot, pod *apiv1.Pod, nodeName string, simulateUnpinnedVolumes bool) *PredicateError {
 	if clusterSnapshot == nil {
 		return NewPredicateError(InternalPredicateError, "", "ClusterSnapshot not provided", nil, emptyString)
 	}
@@ -159,6 +159,7 @@ func (p *SchedulerBasedPredicateChecker) CheckPredicates(clusterSnapshot Cluster
 	defer p.delegatingSharedLister.ResetDelegate()
 
 	state := scheduler_framework.NewCycleState()
+	state.SimulateUnpinnedVolumes = simulateUnpinnedVolumes
 	preFilterStatus := p.framework.RunPreFilterPlugins(context.TODO(), state, pod)
 	if !preFilterStatus.IsSuccess() {
 		return NewPredicateError(

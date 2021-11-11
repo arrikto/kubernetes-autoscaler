@@ -303,7 +303,8 @@ func findPlaceFor(removedNode string, pods []*apiv1.Pod, nodes map[string]bool,
 	loggingQuota := glogx.PodsLoggingQuota()
 
 	tryNodeForPod := func(nodename string, pod *apiv1.Pod) bool {
-		if err := predicateChecker.CheckPredicates(clusterSnapshot, pod, nodename); err != nil {
+		simulateUnpinnedVolumes := true
+		if err := predicateChecker.CheckPredicates(clusterSnapshot, pod, nodename, simulateUnpinnedVolumes); err != nil {
 			glogx.V(4).UpTo(loggingQuota).Infof("Evaluation %s for %s/%s -> %v", nodename, pod.Namespace, pod.Name, err.VerboseMessage())
 			return false
 		}
