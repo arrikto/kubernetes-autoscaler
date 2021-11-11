@@ -743,16 +743,12 @@ func (b *volumeBinder) checkBoundClaims(claims []*v1.PersistentVolumeClaim, node
 		}
 
 		if pv.Spec.CSI != nil && pv.Spec.CSI.Driver == "rok.arrikto.com" {
-			if simulateUnpinnedVolumes == true {
-				klog.V(2).Infof("PersistentVolume %q bound with Pod %s is of Rok Storage Class and simulated as unpinned, skipping CheckNodeAffinity()", pvName, podName)
-				// Go to next PVC
-				continue
-			} else {
-				klog.V(2).Infof("PersistentVolume %q bound with Pod %s is of Rok Storage Class and simulated as pinned, will CheckNodeAffinity()", pvName, podName)
-			}
+			// Run Rok specific checks
+			err = checkRokPV(pv, node, podName, simulateUnpinnedVolumes)
+		} else {
+			err = volumeutil.CheckNodeAffinity(pv, node.Labels)
 		}
 
-		err = volumeutil.CheckNodeAffinity(pv, node.Labels)
 		if err != nil {
 			klog.V(4).Infof("PersistentVolume %q, Node %q mismatch for Pod %q: %v", pvName, node.Name, podName, err)
 			return false, nil
@@ -762,6 +758,19 @@ func (b *volumeBinder) checkBoundClaims(claims []*v1.PersistentVolumeClaim, node
 
 	klog.V(4).Infof("All bound volumes for Pod %q match with Node %q", podName, node.Name)
 	return true, nil
+}
+
+// Checks if a Rok PV can be placed on a specific node
+func checkRokPV(pv *v1.PersistentVolume, node *v1.Node, podName string, simulateUnpinnedVolumes bool) error {
+	pvName := pv.Name
+	if simulateUnpinnedVolumes == true {
+		klog.V(2).Infof("PersistentVolume %q bound with Pod %s is of Rok Storage Class and simulated as unpinned", pvName, podName)
+		return nil
+	}
+
+	klog.V(2).Infof("PersistentVolume %q bound with Pod %s is of Rok Storage Class and simulated as pinned", pvName, podName)
+	err := volumeutil.CheckNodeAffinity(pv, node.Labels)
+	return err
 }
 
 // findMatchingVolumes tries to find matching volumes for given claims,
