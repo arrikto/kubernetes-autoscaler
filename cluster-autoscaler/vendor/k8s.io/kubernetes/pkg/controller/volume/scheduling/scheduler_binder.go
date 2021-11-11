@@ -105,7 +105,7 @@ type SchedulerVolumeBinder interface {
 	// (currently) not usable for the pod.
 	//
 	// This function is called by the volume binding scheduler predicate and can be called in parallel
-	FindPodVolumes(pod *v1.Pod, node *v1.Node) (reasons ConflictReasons, err error)
+	FindPodVolumes(pod *v1.Pod, node *v1.Node, simulateUnpinnedVolumes bool) (reasons ConflictReasons, err error)
 
 	// AssumePodVolumes will:
 	// 1. Take the PV matches for unbound PVCs and update the PV cache assuming
@@ -195,7 +195,7 @@ func (b *volumeBinder) DeletePodBindings(pod *v1.Pod) {
 // FindPodVolumes caches the matching PVs and PVCs to provision per node in podBindingCache.
 // This method intentionally takes in a *v1.Node object instead of using volumebinder.nodeInformer.
 // That's necessary because some operations will need to pass in to the predicate fake node objects.
-func (b *volumeBinder) FindPodVolumes(pod *v1.Pod, node *v1.Node) (reasons ConflictReasons, err error) {
+func (b *volumeBinder) FindPodVolumes(pod *v1.Pod, node *v1.Node, simulateUnpinnedVolumes bool) (reasons ConflictReasons, err error) {
 	podName := getPodName(pod)
 
 	// Warning: Below log needs high verbosity as it can be printed several times (#60933).
@@ -263,7 +263,7 @@ func (b *volumeBinder) FindPodVolumes(pod *v1.Pod, node *v1.Node) (reasons Confl
 
 	// Check PV node affinity on bound volumes
 	if len(boundClaims) > 0 {
-		boundVolumesSatisfied, err = b.checkBoundClaims(boundClaims, node, podName)
+		boundVolumesSatisfied, err = b.checkBoundClaims(boundClaims, node, podName, simulateUnpinnedVolumes)
 		if err != nil {
 			return nil, err
 		}
@@ -723,7 +723,7 @@ func (b *volumeBinder) getPodVolumes(pod *v1.Pod) (boundClaims []*v1.PersistentV
 	return boundClaims, unboundClaimsDelayBinding, unboundClaimsImmediate, nil
 }
 
-func (b *volumeBinder) checkBoundClaims(claims []*v1.PersistentVolumeClaim, node *v1.Node, podName string) (bool, error) {
+func (b *volumeBinder) checkBoundClaims(claims []*v1.PersistentVolumeClaim, node *v1.Node, podName string, simulateUnpinnedVolumes bool) (bool, error) {
 	csiNode, err := b.csiNodeInformer.Lister().Get(node.Name)
 	if err != nil {
 		// TODO: return the error once CSINode is created by default

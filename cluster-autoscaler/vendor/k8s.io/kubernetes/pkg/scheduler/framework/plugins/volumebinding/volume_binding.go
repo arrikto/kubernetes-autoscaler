@@ -72,7 +72,7 @@ func (pl *VolumeBinding) Filter(ctx context.Context, cs *framework.CycleState, p
 		return nil
 	}
 
-	reasons, err := pl.binder.FindPodVolumes(pod, node)
+	reasons, err := pl.binder.FindPodVolumes(pod, node, cs.SimulateUnpinnedVolumes)
 
 	if err != nil {
 		return framework.NewStatus(framework.Error, err.Error())
