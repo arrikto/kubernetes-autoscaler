@@ -279,7 +279,8 @@ func computeExpansionOption(context *context.AutoscalingContext, podEquivalenceG
 
 	for _, eg := range podEquivalenceGroups {
 		samplePod := eg.pods[0]
-		if err := context.PredicateChecker.CheckPredicates(context.ClusterSnapshot, samplePod, nodeInfo.Node().Name); err == nil {
+		simulateUnpinnedVolumes := false
+		if err := context.PredicateChecker.CheckPredicates(context.ClusterSnapshot, samplePod, nodeInfo.Node().Name, simulateUnpinnedVolumes); err == nil {
 			// add pods to option
 			option.Pods = append(option.Pods, eg.pods...)
 			// mark pod group as (theoretically) schedulable

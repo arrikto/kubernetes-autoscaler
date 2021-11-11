@@ -46,7 +46,8 @@ func GetDaemonSetPodsForNode(nodeInfo *schedulerframework.NodeInfo, daemonsets [
 
 	for _, ds := range daemonsets {
 		pod := newPod(ds, nodeInfo.Node().Name)
-		err := predicateChecker.CheckPredicates(clusterSnapshot, pod, nodeInfo.Node().Name)
+		simulateUnpinnedVolumes := false
+		err := predicateChecker.CheckPredicates(clusterSnapshot, pod, nodeInfo.Node().Name, simulateUnpinnedVolumes)
 		if err == nil {
 			result = append(result, pod)
 		} else if err.ErrorType() == simulator.NotSchedulablePredicateError {

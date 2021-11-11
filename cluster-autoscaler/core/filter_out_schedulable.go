@@ -111,7 +111,8 @@ func (p *filterOutSchedulablePodListProcessor) filterOutSchedulableByPacking(
 	for _, pod := range unschedulableCandidates {
 		scheduledOnHintedNode := false
 		if hintedNodeName, hintFound := p.schedulablePodsNodeHints[pod.UID]; hintFound {
-			if predicateChecker.CheckPredicates(clusterSnapshot, pod, hintedNodeName) == nil {
+			simulateUnpinnedVolumes := false
+			if predicateChecker.CheckPredicates(clusterSnapshot, pod, hintedNodeName, simulateUnpinnedVolumes) == nil {
 				// We treat predicate error and missing node error here in the same way
 				scheduledOnHintedNode = true
 				podsFilteredUsingHints++
