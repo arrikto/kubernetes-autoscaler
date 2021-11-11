@@ -140,7 +140,7 @@ type SchedulerVolumeBinder interface {
 	// for volumes that still need to be created.
 	//
 	// This function is called by the scheduler VolumeBinding plugin and can be called in parallel
-	FindPodVolumes(pod *v1.Pod, boundClaims, claimsToBind []*v1.PersistentVolumeClaim, node *v1.Node) (podVolumes *PodVolumes, reasons ConflictReasons, err error)
+	FindPodVolumes(pod *v1.Pod, boundClaims, claimsToBind []*v1.PersistentVolumeClaim, node *v1.Node, simulateUnpinnedVolumes bool) (podVolumes *PodVolumes, reasons ConflictReasons, err error)
 
 	// AssumePodVolumes will:
 	// 1. Take the PV matches for unbound PVCs and update the PV cache assuming
@@ -233,7 +233,7 @@ func NewVolumeBinder(
 // FindPodVolumes finds the matching PVs for PVCs and nodes to provision PVs
 // for the given pod and node. If the node does not fit, confilict reasons are
 // returned.
-func (b *volumeBinder) FindPodVolumes(pod *v1.Pod, boundClaims, claimsToBind []*v1.PersistentVolumeClaim, node *v1.Node) (podVolumes *PodVolumes, reasons ConflictReasons, err error) {
+func (b *volumeBinder) FindPodVolumes(pod *v1.Pod, boundClaims, claimsToBind []*v1.PersistentVolumeClaim, node *v1.Node, simulateUnpinnedVolumes bool) (podVolumes *PodVolumes, reasons ConflictReasons, err error) {
 	podVolumes = &PodVolumes{}
 	podName := getPodName(pod)
 
@@ -288,7 +288,7 @@ func (b *volumeBinder) FindPodVolumes(pod *v1.Pod, boundClaims, claimsToBind []*
 
 	// Check PV node affinity on bound volumes
 	if len(boundClaims) > 0 {
-		boundVolumesSatisfied, err = b.checkBoundClaims(boundClaims, node, podName)
+		boundVolumesSatisfied, err = b.checkBoundClaims(boundClaims, node, podName, simulateUnpinnedVolumes)
 		if err != nil {
 			return
 		}
@@ -762,7 +762,7 @@ func (b *volumeBinder) GetPodVolumes(pod *v1.Pod) (boundClaims []*v1.PersistentV
 	return boundClaims, unboundClaimsDelayBinding, unboundClaimsImmediate, nil
 }
 
-func (b *volumeBinder) checkBoundClaims(claims []*v1.PersistentVolumeClaim, node *v1.Node, podName string) (bool, error) {
+func (b *volumeBinder) checkBoundClaims(claims []*v1.PersistentVolumeClaim, node *v1.Node, podName string, simulateUnpinnedVolumes bool) (bool, error) {
 	csiNode, err := b.csiNodeLister.Get(node.Name)
 	if err != nil {
 		// TODO: return the error once CSINode is created by default
