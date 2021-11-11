@@ -743,8 +743,13 @@ func (b *volumeBinder) checkBoundClaims(claims []*v1.PersistentVolumeClaim, node
 		}
 
 		if pv.Spec.CSI != nil && pv.Spec.CSI.Driver == "rok.arrikto.com" {
-			klog.V(2).Infof("PersistentVolume %q bound with Pod %s is of Rok Storage Class, skipping CheckNodeAffinity()", pvName, podName)
-			return true, nil
+			if simulateUnpinnedVolumes == true {
+				klog.V(2).Infof("PersistentVolume %q bound with Pod %s is of Rok Storage Class and simulated as unpinned, skipping CheckNodeAffinity()", pvName, podName)
+				// Go to next PVC
+				continue
+			} else {
+				klog.V(2).Infof("PersistentVolume %q bound with Pod %s is of Rok Storage Class and simulated as pinned, will CheckNodeAffinity()", pvName, podName)
+			}
 		}
 
 		err = volumeutil.CheckNodeAffinity(pv, node.Labels)
