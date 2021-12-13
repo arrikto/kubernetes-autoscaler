@@ -811,6 +811,13 @@ func (sd *ScaleDown) TryToScaleDown(
 			continue
 		}
 
+		// Negative ScaleDownUnreadyTime indicates that scale down is disabled for Unready nodes
+		if !ready && sd.context.ScaleDownUnreadyTime < 0 {
+			klog.V(2).Infof("Skipping %s - scale down disabled for unready nodes", node.Name)
+			sd.addUnremovableNodeReason(node, simulator.UnreadyScaleDownDisabled)
+			continue
+		}
+
 		// Unready nodes may be deleted after a different time than underutilized nodes.
 		if !ready && !unneededSince.Add(sd.context.ScaleDownUnreadyTime).Before(currentTime) {
 			sd.addUnremovableNodeReason(node, simulator.NotUnreadyLongEnough)
